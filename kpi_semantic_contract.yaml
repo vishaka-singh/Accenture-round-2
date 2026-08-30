@@ -1,0 +1,67 @@
+# KPI Semantic Contract (illustrative)
+# Purpose: a single governed source of truth for what each KPI means,
+# how it is computed, where it comes from, and who may see it.
+# The evidence engine and the LLM narrative layer both read from this
+# contract instead of re-deriving definitions ad hoc.
+
+kpis:
+  - kpi_id: REV_REGION
+    name: Regional Revenue
+    definition: Net booked revenue, region grain
+    formula: "SUM(order_value) - SUM(returns) WHERE region = :region"
+    source_system: Sales (Salesforce CPQ)
+    grain: Region x Product x Day
+    refresh_cadence: Daily, 02:00 UTC
+    owner: Regional Sales Ops
+    sensitivity: Internal
+    access_roles: [Regional Manager, CFO, Sales Ops]
+    lineage: [raw.sales.orders, stg.sales.daily_region_rollup, kpi.rev_region]
+
+  - kpi_id: GROSS_MARGIN
+    name: Gross Margin %
+    definition: (Revenue - COGS) / Revenue
+    formula: "(SUM(revenue) - SUM(cogs)) / SUM(revenue)"
+    source_system: Finance (GL)
+    grain: Company x Week
+    refresh_cadence: Weekly
+    owner: FP&A
+    sensitivity: Restricted - Finance
+    access_roles: [CFO, FP&A]
+    lineage: [raw.finance.gl, stg.finance.weekly_margin, kpi.gross_margin]
+
+  - kpi_id: CHURN_RATE
+    name: Customer Churn Rate
+    definition: Logo churn, trailing 30-day
+    formula: "accounts_lost / accounts_active_start_of_period"
+    source_system: CRM
+    grain: Segment x Month
+    refresh_cadence: Monthly, 5th business day
+    owner: Customer Success Ops
+    sensitivity: Internal
+    access_roles: [CS Lead, CFO, Regional Manager]
+    lineage: [raw.crm.accounts, stg.crm.weekly_churn, kpi.churn_rate]
+
+  - kpi_id: ADOPT_NEWPROD
+    name: New Product Adoption
+    definition: Units sold as % of launch-week forecast
+    formula: "units_sold / forecast_units"
+    source_system: Sales
+    grain: SKU x Day
+    refresh_cadence: Daily
+    owner: Category Manager
+    sensitivity: Internal
+    access_roles: [Category Manager, Regional Manager, CFO]
+    lineage: [raw.sales.orders, stg.sales.launch_tracking, kpi.adopt_newprod]
+    notes: "No reliable rolling baseline until 90 days of history exist. Before that, fall back to a category-launch proxy from comparable SKUs and cap confidence at Medium."
+
+  - kpi_id: INV_AVAIL
+    name: Inventory Availability
+    definition: In-stock rate at SKU-warehouse grain
+    formula: "1 - stockout_days / total_days"
+    source_system: Ops / Inventory
+    grain: SKU x Warehouse x Day
+    refresh_cadence: Daily
+    owner: Ops
+    sensitivity: Internal
+    access_roles: [Regional Manager, Ops, CFO]
+    lineage: [raw.ops.inventory, stg.ops.daily_availability, kpi.inv_avail]

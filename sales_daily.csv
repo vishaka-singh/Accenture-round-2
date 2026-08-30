@@ -1,0 +1,10 @@
+date,region,product,units_sold,revenue_index
+2026-06-01,Region A,Product X,120,101
+2026-06-08,Region A,Product X,118,99
+2026-06-15,Region A,Product X,125,103
+2026-06-22,Region A,Product X,122,100
+2026-06-29,Region A,Product X,130,105
+2026-07-06,Region A,Product X,127,102
+2026-07-13,Region A,Product X,119,97
+2026-07-20,Region A,Product X,124,101
+2026-07-27,Region A,Product X,88,73

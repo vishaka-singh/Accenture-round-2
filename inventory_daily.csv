@@ -1,0 +1,7 @@
+date,warehouse,sku,in_stock_rate_pct,stockout_flag
+2026-07-13,Region A - WH1,Product X,96,0
+2026-07-16,Region A - WH1,Product X,88,0
+2026-07-19,Region A - WH1,Product X,61,1
+2026-07-22,Region A - WH1,Product X,54,1
+2026-07-25,Region A - WH1,Product X,58,1
+2026-07-27,Region A - WH1,Product X,60,1

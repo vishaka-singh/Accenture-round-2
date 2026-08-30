@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BusinessIntelligence.ai — Investigation Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12161C; --panel:#1B212B; --panel2:#222A37; --hair:#2C3542;
+    --text:#EDEFF2; --muted:#8C96A6; --muted2:#5E6879;
+    --amber:#E8A33D; --teal:#3FB8AF; --rose:#E2637A; --violet:#9186E0;
+    --amber-bg:rgba(232,163,61,0.12); --teal-bg:rgba(63,184,175,0.12);
+    --rose-bg:rgba(226,99,122,0.12); --violet-bg:rgba(145,134,224,0.14);
+  }
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+  html,body{margin:0;padding:0;background:var(--ink);color:var(--text);
+    font-family:'IBM Plex Sans',sans-serif; font-size:14px; -webkit-font-smoothing:antialiased;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .disp{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit;}
+
+  #app{display:flex; min-height:100vh; flex-direction:column;}
+
+  header{padding:18px 20px; border-bottom:1px solid var(--hair); display:flex;
+    align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  .brand{display:flex; align-items:baseline; gap:10px;}
+  .brand .mark{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px; letter-spacing:-0.01em;}
+  .brand .tag{color:var(--muted); font-size:12px;}
+  .persona-switch{display:flex; align-items:center; gap:8px; background:var(--panel);
+    border:1px solid var(--hair); border-radius:8px; padding:4px;}
+  .persona-btn{border:none; background:transparent; color:var(--muted); font-family:'IBM Plex Sans';
+    font-size:12.5px; font-weight:500; padding:7px 12px; border-radius:6px; cursor:pointer; letter-spacing:0.01em;}
+  .persona-btn.active{background:var(--panel2); color:var(--text);}
+  .persona-btn .role{display:block; font-size:10px; color:var(--muted2); font-weight:400; margin-top:1px;}
+  .persona-btn.active .role{color:var(--muted);}
+
+  main{display:flex; flex:1; min-height:0;}
+  aside{width:280px; flex-shrink:0; border-right:1px solid var(--hair); padding:16px 12px; overflow-y:auto;}
+  aside h2{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted2);
+    margin:6px 8px 12px; font-weight:600;}
+  .case{padding:11px 12px; border-radius:10px; margin-bottom:6px; cursor:pointer; border:1px solid transparent;}
+  .case:hover{background:var(--panel);}
+  .case.sel{background:var(--panel2); border-color:var(--hair);}
+  .case-id{font-size:10.5px; color:var(--muted2); letter-spacing:0.03em;}
+  .case-name{font-size:13.5px; font-weight:500; margin:2px 0 6px;}
+  .status{display:inline-block; font-size:9.5px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;
+    padding:3px 7px; border-radius:5px;}
+  .status.active{background:var(--amber-bg); color:var(--amber);}
+  .status.abstain{background:var(--rose-bg); color:var(--rose);}
+  .status.sparse{background:var(--violet-bg); color:var(--violet);}
+  .status.resolved{background:var(--teal-bg); color:var(--teal);}
+  .status.quiet{background:rgba(140,150,166,0.12); color:var(--muted);}
+
+  #content{flex:1; overflow-y:auto; padding:22px 26px 60px;}
+  .kpi-head{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px; margin-bottom:6px;}
+  .kpi-head h1{font-family:'Space Grotesk'; font-size:22px; margin:0 0 4px; font-weight:600;}
+  .kpi-head .sub{color:var(--muted); font-size:13px;}
+  .lockbtn{background:var(--panel); border:1px solid var(--hair); color:var(--muted); font-size:12px;
+    padding:7px 12px; border-radius:7px; cursor:pointer; font-family:'IBM Plex Sans';}
+  .lockbtn:hover{color:var(--text); border-color:var(--muted2);}
+
+  .contract{background:var(--panel); border:1px solid var(--hair); border-radius:10px; padding:12px 14px; margin:14px 0 20px; font-size:12px;}
+  .contract summary{cursor:pointer; color:var(--muted); font-size:11.5px; letter-spacing:0.03em; text-transform:uppercase; font-weight:600;}
+  .contract pre{margin:10px 0 0; white-space:pre-wrap; color:var(--muted); font-size:11.5px; line-height:1.6;}
+
+  .stepper{display:flex; gap:4px; margin:18px 0 22px; flex-wrap:wrap;}
+  .step-pill{flex:1; min-width:120px; background:var(--panel); border:1px solid var(--hair); border-radius:9px;
+    padding:9px 12px; cursor:pointer;}
+  .step-pill.sel{background:var(--panel2); border-color:var(--muted2);}
+  .step-pill .n{font-family:'IBM Plex Mono'; font-size:10px; color:var(--muted2);}
+  .step-pill .t{font-size:12px; font-weight:500; margin-top:2px;}
+  .step-pill.llm .n{color:var(--violet);}
+
+  .stage-card{background:var(--panel); border:1px solid var(--hair); border-radius:14px; padding:20px 22px;}
+  .method-tag{display:inline-flex; align-items:center; gap:6px; font-size:10.5px; letter-spacing:0.04em;
+    text-transform:uppercase; font-weight:600; padding:4px 9px; border-radius:6px; margin-bottom:14px;}
+  .method-tag.det{background:var(--teal-bg); color:var(--teal);}
+  .method-tag.llm{background:var(--violet-bg); color:var(--violet);}
+  .method-tag .dot{width:6px; height:6px; border-radius:50%; background:currentColor;}
+
+  .row{display:flex; gap:18px; flex-wrap:wrap;}
+  .col{flex:1; min-width:220px;}
+  .metric-block{display:flex; gap:22px; flex-wrap:wrap; margin-bottom:14px;}
+  .metric{}
+  .metric .label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted2); margin-bottom:4px;}
+  .metric .val{font-family:'IBM Plex Mono'; font-size:22px; font-weight:600;}
+  .metric .val.flag{color:var(--rose);}
+  .note{color:var(--muted); font-size:12.5px; line-height:1.6; margin-top:10px;}
+
+  .srcgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:6px;}
+  .srccard{background:var(--panel2); border:1px solid var(--hair); border-radius:9px; padding:10px 12px;}
+  .srccard .sname{font-size:12.5px; font-weight:600;}
+  .srccard .smeta{font-size:11px; color:var(--muted); margin-top:3px; line-height:1.5;}
+
+  .hyp{background:var(--panel2); border:1px solid var(--hair); border-radius:10px; padding:12px 14px; margin-bottom:10px;}
+  .hyp .hname{font-size:13px; font-weight:600; display:flex; justify-content:space-between;}
+  .hyp .score{font-family:'IBM Plex Mono'; color:var(--amber);}
+  .barwrap{background:var(--hair); border-radius:5px; height:6px; margin:8px 0; overflow:hidden;}
+  .bar{height:100%; background:var(--amber);}
+  .ev{display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); margin-top:4px;}
+  .ev .neg{color:var(--rose);}
+  .ev .pos{color:var(--teal);}
+
+  .stamp{display:inline-block; font-family:'Space Grotesk'; font-weight:700; font-size:14px; letter-spacing:0.08em;
+    text-transform:uppercase; padding:10px 18px; border:2.5px solid; border-radius:4px; transform:rotate(-3deg);
+    margin:6px 0 16px;}
+  .stamp.high{color:var(--teal); border-color:var(--teal);}
+  .stamp.medium{color:var(--amber); border-color:var(--amber);}
+  .stamp.insufficient{color:var(--rose); border-color:var(--rose);}
+
+  .llmbox{border:1px dashed var(--violet); background:var(--violet-bg); border-radius:10px; padding:14px 16px; margin-top:6px;}
+  .genbtn{background:var(--violet); color:#12161C; border:none; padding:9px 16px; border-radius:8px; font-weight:600;
+    font-size:12.5px; cursor:pointer; font-family:'IBM Plex Sans';}
+  .genbtn:disabled{opacity:0.5; cursor:default;}
+  .narrative{margin-top:12px; font-size:13.5px; line-height:1.7; white-space:pre-wrap;}
+  .narrative.loading{color:var(--muted); font-style:italic;}
+
+  table.action{width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px;}
+  table.action th{text-align:left; color:var(--muted2); font-weight:600; font-size:10.5px; text-transform:uppercase;
+    letter-spacing:0.04em; padding:6px 10px; border-bottom:1px solid var(--hair);}
+  table.action td{padding:9px 10px; border-bottom:1px solid var(--hair); vertical-align:top;}
+
+  .lockscreen{text-align:center; padding:60px 20px; color:var(--muted);}
+  .lockscreen .ic{font-size:30px; margin-bottom:10px;}
+
+  .telemetry{position:sticky; bottom:0; background:var(--panel); border-top:1px solid var(--hair);
+    padding:10px 22px; display:flex; gap:26px; flex-wrap:wrap; font-size:11.5px; color:var(--muted);}
+  .telemetry b{color:var(--text); font-family:'IBM Plex Mono'; font-weight:600;}
+  .telemetry .legend{display:flex; gap:14px; margin-left:auto;}
+  .telemetry .legend span{display:flex; align-items:center; gap:5px;}
+  .telemetry .legend .sw{width:8px; height:8px; border-radius:50%;}
+
+  @media (max-width:760px){
+    aside{width:100%; border-right:none; border-bottom:1px solid var(--hair); display:flex; overflow-x:auto; padding:10px;}
+    .case{min-width:200px; margin-right:8px; margin-bottom:0;}
+    main{flex-direction:column;}
+    .telemetry{position:static; flex-direction:column; gap:6px;}
+    .telemetry .legend{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <span class="mark">BusinessIntelligence.ai</span>
+      <span class="tag">Investigation Console — prototype</span>
+    </div>
+    <div class="persona-switch" id="personaSwitch"></div>
+  </header>
+  <main>
+    <aside id="caseList"></aside>
+    <div id="content"></div>
+  </main>
+  <div class="telemetry" id="telemetry"></div>
+</div>
+
+<script>
+/* ---------- SEMANTIC CONTRACT + CASE DATA (simulated, illustrative) ---------- */
+const PERSONAS = [
+  {id:'rsm', label:'Regional Sales Manager', role:'Operational — Region A', canSeeFinance:false},
+  {id:'cfo', label:'CFO / Finance Lead', role:'Financial — All regions', canSeeFinance:true},
+];
+let persona = PERSONAS[0];
+
+const CASES = [
+  {
+    id:'A1', name:'Regional Revenue — Region A', status:'active', statusLabel:'Active investigation',
+    contract:{
+      kpi_id:'REV_REGION', definition:'Net booked revenue, region grain, daily grain',
+      formula:'SUM(order_value) - SUM(returns) WHERE region = X',
+      source_system:'Sales (Salesforce CPQ)', grain:'Region x Product x Day', refresh_cadence:'Daily, 02:00 UTC',
+      owner:'Regional Sales Ops', sensitivity:'Internal', access_roles:['Regional Manager','CFO','Sales Ops']
+    },
+    detect:{expectedLow:95,expectedHigh:105,actual:88,unit:'index (100=baseline)',z:-2.4,
+      note:'8-week rolling mean ± 2σ control band. Actual falls 2.4σ below expectation — flagged before any analyst opened a dashboard.'},
+    sources:[
+      {name:'Sales', meta:'Daily · order grain · fresh 4h ago'},
+      {name:'Inventory / Ops', meta:'Daily · SKU-warehouse grain · fresh 6h ago'},
+      {name:'CRM', meta:'Weekly · account grain · fresh 2d ago'},
+      {name:'Feedback / Market', meta:'Ad hoc · text signals, sentiment-tagged'},
+    ],
+    reconcile:'Joined on PRODUCT × REGION × WEEK (CRM re-based from account-grain to weekly region rollup to align cadence with daily sales feed).',
+    hypotheses:[
+      {name:'Inventory shortage', score:55, support:4, contra:0},
+      {name:'Competitor promotion', score:30, support:2, contra:1},
+      {name:'Campaign under-delivery', score:15, support:1, contra:2},
+    ],
+    confidence:'high', confidenceNote:'4 independent, corroborating signals (stockout log, fulfillment delay tickets, sell-through drop concentrated in 2 SKUs, no matching drop in web traffic that would implicate demand).',
+    sparse:false, restricted:false,
+    narratives:{
+      rsm:{summary:'Region A revenue is down 12% against expectation, concentrated in 2 SKUs.',
+        actions:[
+          {driver:'Inventory shortage (Product X)', lever:'Replenishment', action:'Expedite restock to Region A warehouse', impact:'+8-10 pts vs. current trajectory', owner:'Regional Ops', conf:'High', monitor:'Daily stockout rate for 14 days'},
+          {driver:'Competitor promotion', lever:'Local pricing', action:'Review match-pricing on affected SKUs', impact:'Partial offset, unquantified', owner:'Regional Manager', conf:'Medium', monitor:'Weekly share-of-shelf'},
+        ]},
+      cfo:{summary:'Region A revenue miss of ~12% is margin-neutral in root cause (supply, not price erosion) — no pricing action needed at the P&L level.',
+        actions:[
+          {driver:'Inventory shortage (Product X)', lever:'Working capital / safety stock', action:'Approve expedited freight spend', impact:'Recovers ~$180K of at-risk quarterly revenue (illustrative)', owner:'VP Supply Chain', conf:'High', monitor:'Fill rate + freight cost variance'},
+        ]},
+    }
+  },
+  {
+    id:'A2', name:'Customer Churn Rate', status:'abstain', statusLabel:'Insufficient evidence',
+    contract:{
+      kpi_id:'CHURN_RATE', definition:'Logo churn, trailing-30-day, monthly grain',
+      formula:'Accounts lost / Active accounts start-of-period', source_system:'CRM',
+      grain:'Segment x Month', refresh_cadence:'Monthly, 5th business day', owner:'Customer Success Ops',
+      sensitivity:'Internal', access_roles:['CS Lead','CFO','Regional Manager']
+    },
+    detect:{expectedLow:2.1,expectedHigh:2.9,actual:3.6,unit:'% monthly churn',z:1.9,
+      note:'Above the upper control band but below the hard-alert threshold — flagged for investigation, not auto-escalated.'},
+    sources:[
+      {name:'CRM', meta:'Monthly · account grain · fresh 3d ago'},
+      {name:'Feedback / Market', meta:'Ad hoc · sentiment-tagged support tickets'},
+      {name:'Finance', meta:'Weekly · billing grain · fresh 1d ago'},
+    ],
+    reconcile:'Joined on ACCOUNT × MONTH. Two cohorts (SMB vs. Enterprise) move in opposite directions once segmented.',
+    hypotheses:[
+      {name:'Pricing change (SMB tier)', score:38, support:2, contra:2},
+      {name:'Onboarding friction (new cohort)', score:34, support:2, contra:1},
+      {name:'Support ticket backlog', score:28, support:1, contra:2},
+    ],
+    confidence:'insufficient',
+    confidenceNote:'Evidence is contradictory: SMB churn rose after a March price change, but Enterprise churn (unaffected by that change) rose by a similar margin — a single-cause story would over-fit. Support ticket volume is up, but resolution time is flat, weakening that hypothesis too.',
+    sparse:false, restricted:false,
+    clarify:'Was there a support staffing change or a competitor launch in the Enterprise segment this month that the connected sources don\u2019t capture?',
+    narratives:{ rsm:null, cfo:null }
+  },
+  {
+    id:'A3', name:'New Product Adoption — "Aurora" line', status:'sparse', statusLabel:'Sparse history',
+    contract:{
+      kpi_id:'ADOPT_NEWPROD', definition:'Units sold as % of launch-week forecast',
+      formula:'Units sold / forecast units, cumulative since launch', source_system:'Sales',
+      grain:'SKU x Day', refresh_cadence:'Daily', owner:'Category Manager',
+      sensitivity:'Internal', access_roles:['Category Manager','Regional Manager','CFO']
+    },
+    detect:{expectedLow:90,expectedHigh:110,actual:71,unit:'% of forecast',z:null,
+      note:'Only 18 days of history exist (product launched 3 weeks ago) — too little to build a reliable rolling baseline. Detection falls back to a category-launch proxy built from 3 comparable SKUs, seasonality-adjusted for launch week.'},
+    sources:[
+      {name:'Sales', meta:'Daily · SKU grain · 18 days of history'},
+      {name:'CRM', meta:'Weekly · early-adopter cohort tags'},
+      {name:'Feedback / Market', meta:'Ad hoc · launch review sentiment'},
+    ],
+    reconcile:'No internal baseline available — proxy baseline built from 3 analogous launches, joined on CATEGORY × WEEKS-SINCE-LAUNCH.',
+    hypotheses:[
+      {name:'Distribution rollout incomplete', score:48, support:2, contra:0},
+      {name:'Awareness / marketing reach', score:32, support:1, contra:0},
+      {name:'Product-market mismatch', score:20, support:0, contra:2},
+    ],
+    confidence:'medium',
+    confidenceNote:'Confidence is capped at Medium regardless of evidence strength — the proxy baseline itself carries uncertainty that a full 90-day history would not have.',
+    sparse:true, restricted:false,
+    narratives:{
+      rsm:{summary:'Aurora line is tracking 29% below a proxy-based forecast, most likely a rollout timing issue rather than weak demand.',
+        actions:[{driver:'Distribution incomplete', lever:'Retail rollout', action:'Confirm shelf-in dates with remaining 40% of planned outlets', impact:'Unquantified — re-baseline once distribution completes', owner:'Category Manager', conf:'Medium', monitor:'Weekly distribution %% vs. plan'}]},
+      cfo:{summary:'Early days for Aurora — recommend against reforecasting the launch until a stable 60-day baseline exists.',
+        actions:[{driver:'Distribution incomplete', lever:'Capex/marketing spend pacing', action:'Hold marketing spend acceleration until rollout confirms', impact:'Avoids ~$40K of premature spend (illustrative)', owner:'Category Manager', conf:'Medium', monitor:'Re-run this case at day 45'}]},
+    }
+  },
+  {
+    id:'A4', name:'Gross Margin %', status:'resolved', statusLabel:'Resolved · restricted',
+    contract:{
+      kpi_id:'GROSS_MARGIN', definition:'(Revenue - COGS) / Revenue', source_system:'Finance',
+      grain:'Company x Week', refresh_cadence:'Weekly', owner:'FP&A',
+      sensitivity:'Restricted — Finance', access_roles:['CFO','FP&A']
+    },
+    detect:{expectedLow:41,expectedHigh:44,actual:39.2,unit:'% margin',z:-2.1,
+      note:'Below control band. Restricted KPI: only Finance-role personas may view the underlying evidence.'},
+    sources:[{name:'Finance', meta:'Weekly · GL account grain'},{name:'Sales', meta:'Daily · price/mix grain'}],
+    reconcile:'Price-volume-mix bridge computed on GL x Sales join, weekly grain.',
+    hypotheses:[
+      {name:'Input cost inflation', score:60, support:3, contra:0},
+      {name:'Unfavorable product mix', score:40, support:2, contra:1},
+    ],
+    confidence:'high', confidenceNote:'Cost ledger and mix-shift both corroborate; no contradicting signal.',
+    sparse:false, restricted:true,
+    narratives:{
+      cfo:{summary:'Margin compression is cost-driven (input inflation), not price erosion — no commercial pricing response needed.',
+        actions:[{driver:'Input cost inflation', lever:'Procurement / hedging', action:'Review supplier contract re-pricing on 2 key inputs', impact:'~1.1pt margin recovery (illustrative)', owner:'Head of Procurement', conf:'High', monitor:'Weekly input cost index'}]},
+      rsm:null
+    }
+  },
+  {
+    id:'A5', name:'Inventory Availability', status:'quiet', statusLabel:'Monitoring · normal',
+    contract:{
+      kpi_id:'INV_AVAIL', definition:'In-stock rate at SKU-warehouse grain', source_system:'Ops/Inventory',
+      grain:'SKU x Warehouse x Day', refresh_cadence:'Daily', owner:'Ops', sensitivity:'Internal',
+      access_roles:['Regional Manager','Ops','CFO']
+    },
+    detect:{expectedLow:92,expectedHigh:98,actual:95,unit:'% in-stock',z:0.3,
+      note:'Within the expected control band — no investigation triggered. Shown here to demonstrate that the engine does not manufacture a story for normal variation.'},
+    sources:[{name:'Inventory / Ops', meta:'Daily · SKU-warehouse grain'}],
+    reconcile:'N/A — no investigation opened.', hypotheses:[], confidence:null, confidenceNote:null,
+    sparse:false, restricted:false, quiet:true, narratives:{rsm:null,cfo:null}
+  },
+];
+
+let selectedCaseId = CASES[0].id;
+let selectedStage = 0;
+const STAGES = ['Detect signal','Gather context','Test hypotheses','Explain evidence','Recommend action'];
+const stageIsLLM = [false,false,false,true,false];
+
+let telemetry = {calls:0, lastLatency:null, tokensIn:0, tokensOut:0};
+const RATE_IN_PER_MTOK = 3;   // illustrative assumption — replace with your actual/negotiated rate
+const RATE_OUT_PER_MTOK = 15; // illustrative assumption
+
+/* ---------- RENDER ---------- */
+function renderPersonaSwitch(){
+  const el = document.getElementById('personaSwitch');
+  el.innerHTML = PERSONAS.map(p=>`
+    <button class="persona-btn ${p.id===persona.id?'active':''}" onclick="setPersona('${p.id}')">
+      ${p.label}<span class="role">${p.role}</span>
+    </button>`).join('');
+}
+function setPersona(id){ persona = PERSONAS.find(p=>p.id===id); renderPersonaSwitch(); renderContent(); }
+
+function renderCaseList(){
+  const el = document.getElementById('caseList');
+  el.innerHTML = '<h2>Open cases</h2>' + CASES.map(c=>`
+    <div class="case ${c.id===selectedCaseId?'sel':''}" onclick="selectCase('${c.id}')">
+      <div class="case-id mono">CASE ${c.id}</div>
+      <div class="case-name">${c.name}</div>
+      <span class="status ${c.status}">${c.statusLabel}</span>
+    </div>`).join('');
+}
+function selectCase(id){ selectedCaseId=id; selectedStage=0; renderContent(); }
+function selectStage(i){ selectedStage=i; renderContent(); }
+
+function stampWord(conf){
+  return conf==='high' ? 'Confirmed — high confidence' :
+         conf==='medium' ? 'Working theory — medium confidence' :
+         'Insufficient evidence';
+}
+
+function renderContent(){
+  renderCaseList();
+  const c = CASES.find(x=>x.id===selectedCaseId);
+  const el = document.getElementById('content');
+  const isRestrictedForPersona = c.restricted && !persona.canSeeFinance;
+
+  let stepperHtml = STAGES.map((s,i)=>`
+    <div class="step-pill ${i===selectedStage?'sel':''} ${stageIsLLM[i]?'llm':''}" onclick="selectStage(${i})">
+      <div class="n mono">${stageIsLLM[i]?'LLM · ':''}STEP ${i+1}</div>
+      <div class="t">${s}</div>
+    </div>`).join('');
+
+  let contractHtml = `<details class="contract"><summary>KPI semantic contract</summary><pre>${JSON.stringify(c.contract,null,2)}</pre></details>`;
+
+  let body = '';
+  if(isRestrictedForPersona){
+    body = `<div class="stage-card"><div class="lockscreen"><div class="ic">🔒</div>
+      <div style="color:var(--text);font-weight:600;margin-bottom:4px;">Restricted — Finance role required</div>
+      <div style="font-size:12.5px;">This KPI's evidence is column-restricted to roles: ${c.contract.access_roles.join(', ')}.<br>
+      Switch to the CFO persona to view this case.</div></div></div>`;
+  } else {
+    body = renderStage(c, selectedStage);
+  }
+
+  el.innerHTML = `
+    <div class="kpi-head">
+      <div>
+        <h1>${c.name}</h1>
+        <div class="sub">Case ${c.id} · ${c.contract.grain} · owner: ${c.contract.owner}</div>
+      </div>
+    </div>
+    ${contractHtml}
+    <div class="stepper">${stepperHtml}</div>
+    ${body}
+  `;
+  renderTelemetry();
+}
+
+function renderStage(c, i){
+  if(c.quiet && i>0){
+    return `<div class="stage-card"><p class="note">No investigation was opened for this KPI — the signal was within its expected control band, so stages 2–5 never ran. This is intentional: the engine should stay quiet on normal variation rather than manufacture an explanation.</p></div>`;
+  }
+  if(i===0){
+    const z = c.detect.z===null ? 'n/a (sparse history — proxy baseline used)' : c.detect.z;
+    return `<div class="stage-card">
+      <span class="method-tag det"><span class="dot"></span>Deterministic — rolling control-chart, no LLM</span>
+      <div class="metric-block">
+        <div class="metric"><div class="label">Expected range</div><div class="val">${c.detect.expectedLow}–${c.detect.expectedHigh}</div></div>
+        <div class="metric"><div class="label">Actual</div><div class="val flag">${c.detect.actual}</div></div>
+        <div class="metric"><div class="label">Unit</div><div class="val" style="font-size:14px;">${c.detect.unit}</div></div>
+        <div class="metric"><div class="label">Z-score</div><div class="val" style="font-size:16px;">${z}</div></div>
+      </div>
+      <p class="note">${c.detect.note}</p>
+    </div>`;
+  }
+  if(i===1){
+    return `<div class="stage-card">
+      <span class="method-tag det"><span class="dot"></span>Deterministic — source join + reconciliation, no LLM</span>
+      <div class="srcgrid">${c.sources.map(s=>`<div class="srccard"><div class="sname">${s.name}</div><div class="smeta">${s.meta}</div></div>`).join('')}</div>
+      <p class="note"><b style="font-family:inherit;color:var(--text);">Reconciliation:</b> ${c.reconcile}</p>
+    </div>`;
+  }
+  if(i===2){
+    if(!c.hypotheses.length) return `<div class="stage-card"><p class="note">No hypotheses generated — no signal was detected.</p></div>`;
+    return `<div class="stage-card">
+      <span class="method-tag det"><span class="dot"></span>Deterministic — weighted rule-based evidence scoring, no LLM</span>
+      ${c.hypotheses.map(h=>`
+        <div class="hyp">
+          <div class="hname">${h.name}<span class="score">${h.score}%</span></div>
+          <div class="barwrap"><div class="bar" style="width:${h.score}%"></div></div>
+          <div class="ev"><span class="pos">${h.support} supporting signal${h.support!==1?'s':''}</span><span class="neg">${h.contra} contradicting signal${h.contra!==1?'s':''}</span></div>
+        </div>`).join('')}
+    </div>`;
+  }
+  if(i===3){
+    const stamp = c.confidence ? `<span class="stamp ${c.confidence}">${stampWord(c.confidence)}</span>` : '';
+    let clarify = c.clarify ? `<p class="note"><b style="color:var(--text);font-family:inherit;">Clarifying question raised instead of a guess:</b> "${c.clarify}"</p>` : '';
+    const narr = c.narratives[persona.id];
+    return `<div class="stage-card">
+      <span class="method-tag det"><span class="dot"></span>Deterministic confidence scoring, no LLM</span><br>
+      ${stamp}
+      <p class="note">${c.confidenceNote || ''}</p>
+      ${clarify}
+      <div class="llmbox">
+        <span class="method-tag llm"><span class="dot"></span>LLM — narrative synthesis only, grounded on evidence above</span>
+        <div>
+          <button class="genbtn" id="genBtn" onclick="generateNarrative()" ${!narr?'disabled':''}>
+            ${!narr ? 'No narrative — evidence insufficient / restricted' : 'Generate investigator narrative for ' + persona.label}
+          </button>
+        </div>
+        <div class="narrative" id="narrativeOut"></div>
+      </div>
+    </div>`;
+  }
+  if(i===4){
+    const narr = c.narratives[persona.id];
+    if(!narr) return `<div class="stage-card"><p class="note">No action is recommended. Either evidence is insufficient (see Explain stage) or this persona has no recommended action for this case.</p></div>`;
+    return `<div class="stage-card">
+      <span class="method-tag det"><span class="dot"></span>Deterministic — action brief assembled from ranked evidence, no LLM</span>
+      <p style="font-size:13.5px;margin-top:0;">${narr.summary}</p>
+      <table class="action">
+        <tr><th>Driver</th><th>Lever</th><th>Action</th><th>Expected impact</th><th>Owner</th><th>Confidence</th><th>Monitoring plan</th></tr>
+        ${narr.actions.map(a=>`<tr><td>${a.driver}</td><td>${a.lever}</td><td>${a.action}</td><td>${a.impact}</td><td>${a.owner}</td><td>${a.conf}</td><td>${a.monitor}</td></tr>`).join('')}
+      </table>
+      <p class="note">High-impact actions (>$100K illustrative threshold) require human approval before execution — this brief is a recommendation, not an automated action.</p>
+    </div>`;
+  }
+}
+
+async function generateNarrative(){
+  const c = CASES.find(x=>x.id===selectedCaseId);
+  const narr = c.narratives[persona.id];
+  const out = document.getElementById('narrativeOut');
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  out.className = 'narrative loading';
+  out.textContent = 'Calling model…';
+
+  const evidenceBundle = {
+    kpi: c.name, detect: c.detect, hypotheses: c.hypotheses,
+    confidence: c.confidence, confidence_note: c.confidenceNote,
+    persona: persona.label, deterministic_summary: narr.summary
+  };
+  const prompt = `You are the narrative layer of an AI Business Investigator. You do NOT compute numbers or invent causes — you only narrate the evidence bundle below, in plain language, for the named persona.
+Rules: stay under 110 words. State the confidence level explicitly. Do not introduce any figure not present in the bundle. If confidence is not "high", say so plainly and note what would raise confidence.
+
+Evidence bundle (JSON):
+${JSON.stringify(evidenceBundle, null, 2)}
+
+Write the narrative for: ${persona.label}.`;
+
+  const t0 = performance.now();
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 300,
+        messages: [{role:"user", content: prompt}]
+      })
+    });
+    const data = await response.json();
+    const t1 = performance.now();
+    const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n') || '(no text returned)';
+    out.className = 'narrative';
+    out.textContent = text;
+
+    telemetry.calls += 1;
+    telemetry.lastLatency = Math.round(t1-t0);
+    telemetry.tokensIn += Math.round(prompt.length/4);
+    telemetry.tokensOut += Math.round(text.length/4);
+  }catch(e){
+    out.className = 'narrative';
+    out.textContent = 'Model call failed (' + e.message + '). Falling back to deterministic summary: ' + narr.summary;
+  }
+  btn.disabled = false;
+  renderTelemetry();
+}
+
+function renderTelemetry(){
+  const el = document.getElementById('telemetry');
+  const costIn = (telemetry.tokensIn/1e6)*RATE_IN_PER_MTOK;
+  const costOut = (telemetry.tokensOut/1e6)*RATE_OUT_PER_MTOK;
+  el.innerHTML = `
+    <span>Model calls this session: <b>${telemetry.calls}</b></span>
+    <span>Last latency: <b>${telemetry.lastLatency ? telemetry.lastLatency+' ms' : '—'}</b></span>
+    <span>Est. tokens (in/out): <b>${telemetry.tokensIn} / ${telemetry.tokensOut}</b></span>
+    <span>Est. cost: <b>$${(costIn+costOut).toFixed(4)}</b> <span style="opacity:0.7">(illustrative rate — adjust in code)</span></span>
+    <span class="legend">
+      <span><span class="sw" style="background:var(--teal)"></span>4/5 stages deterministic</span>
+      <span><span class="sw" style="background:var(--violet)"></span>1/5 stage LLM (narrative only)</span>
+    </span>
+  `;
+}
+
+renderPersonaSwitch();
+renderContent();
+</script>
+</body>
+</html>

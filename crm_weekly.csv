@@ -1,0 +1,11 @@
+week,segment,accounts_active,accounts_churned,churn_rate_pct
+2026-06-01,SMB,4200,88,2.1
+2026-06-08,SMB,4180,92,2.2
+2026-06-15,SMB,4160,102,2.4
+2026-06-22,SMB,4130,140,3.4
+2026-06-29,SMB,4090,148,3.6
+2026-06-01,Enterprise,310,6,1.9
+2026-06-08,Enterprise,308,6,1.9
+2026-06-15,Enterprise,306,7,2.3
+2026-06-22,Enterprise,303,11,3.6
+2026-06-29,Enterprise,299,11,3.7
